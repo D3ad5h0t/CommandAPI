@@ -8,11 +8,11 @@ namespace CommandAPI.Data
 
         Task<Command?> GetCommandByIdAsync(string commandId);
 
-        Task<IEnumerable<Command>> GetAllCommandsAsync();
+        Task<IEnumerable<Command?>?> GetAllCommandsAsync();
 
         Task CreateCommandAsync(Command cmd);
 
-        //Update
+        Task UpdateCommandAsync(Command cmd);
 
         void DeleteCommand(Command cmd);
     }

@@ -32,7 +32,7 @@ namespace CommandAPI.Data
             _context.Commands.Remove(cmd);
         }
 
-        public async Task<IEnumerable<Command>> GetAllCommandsAsync()
+        public async Task<IEnumerable<Command?>?> GetAllCommandsAsync()
         {
             return await _context.Commands.ToListAsync();
         }
@@ -45,6 +45,13 @@ namespace CommandAPI.Data
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateCommandAsync(Command cmd)
+        {
+            Console.WriteLine("--> UpdateCommandAsync in SqlCommandRepo called redundantly...");
+
+            await Task.CompletedTask;
         }
     }
 }

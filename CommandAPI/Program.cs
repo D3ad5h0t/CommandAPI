@@ -1,6 +1,7 @@
 using CommandAPI.Data;
 using CommandAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("SQLDbConnection")));
-builder.Services.AddScoped<ICommandRepo, SqlCommandRepo>();
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(opt => ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("RedisConnection")));
+
+// builder.Services.AddScoped<ICommandRepo, SqlCommandRepo>();
+
+builder.Services.AddScoped<ICommandRepo, RedisCommandRepo>();
 
 var app = builder.Build();
 
@@ -61,6 +67,7 @@ app.MapPut("api/v1/commands/{commandId}", async (ICommandRepo repo, string comma
     command.CommandLine = cmd.CommandLine;
     command.Platform = cmd.Platform;
 
+    await repo.UpdateCommandAsync(command);
     await repo.SaveChangesAsync();
 
     return Results.NoContent();
