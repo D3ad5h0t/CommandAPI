@@ -8,6 +8,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("SQLDbConnection")));
+builder.Services.AddScoped<ICommandRepo, SqlCommandRepo>();
 
 var app = builder.Build();
 
@@ -20,17 +21,17 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 //GET All Commands
-app.MapGet("api/v1/commands", async (AppDbContext context) =>
+app.MapGet("api/v1/commands", async (ICommandRepo repo) =>
 {
-    var commands = await context.Commands.ToListAsync();
+    var commands = await repo.GetAllCommandsAsync();
 
     return Results.Ok(commands);
 });
 
 //GET Single
-app.MapGet("api/v1/commands/{commandId}", async (AppDbContext context, string commandId) =>
+app.MapGet("api/v1/commands/{commandId}", async (ICommandRepo repo, string commandId) =>
 {
-    var command = await context.Commands.FirstOrDefaultAsync(c => c.CommandId == commandId);
+    var command = await repo.GetCommandByIdAsync(commandId);
 
     if (command != null)
     {
@@ -41,18 +42,18 @@ app.MapGet("api/v1/commands/{commandId}", async (AppDbContext context, string co
 });
 
 //Create
-app.MapPost("api/v1/commands", async (AppDbContext context, Command cmd) =>
+app.MapPost("api/v1/commands", async (ICommandRepo repo, Command cmd) =>
 {
-    await context.Commands.AddAsync(cmd);
-    await context.SaveChangesAsync();
+    await repo.CreateCommandAsync(cmd);
+    await repo.SaveChangesAsync();
 
     return Results.Created($"/api/v1/commands/{cmd.CommandId}", cmd);
 });
 
 //Update
-app.MapPut("api/v1/commands/{commandId}", async (AppDbContext context, string commandId, Command cmd) =>
+app.MapPut("api/v1/commands/{commandId}", async (ICommandRepo repo, string commandId, Command cmd) =>
 {
-    var command = await context.Commands.FirstOrDefaultAsync(c => c.CommandId == commandId);
+    var command = await repo.GetCommandByIdAsync(commandId);
 
     if (command is null) return Results.NotFound();
 
@@ -60,20 +61,20 @@ app.MapPut("api/v1/commands/{commandId}", async (AppDbContext context, string co
     command.CommandLine = cmd.CommandLine;
     command.Platform = cmd.Platform;
 
-    await context.SaveChangesAsync();
+    await repo.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
 //Delete
-app.MapDelete("api/v1/commands/{commandId}", async (AppDbContext context, string commandId) =>
+app.MapDelete("api/v1/commands/{commandId}", async (ICommandRepo repo, string commandId) =>
 {
-    var command = await context.Commands.FirstOrDefaultAsync(c => c.CommandId == commandId);
+    var command = await repo.GetCommandByIdAsync(commandId);
 
     if (command is null) return Results.NotFound();
 
-    context.Commands.Remove(command);
-    await context.SaveChangesAsync();
+    repo.DeleteCommand(command);
+    await repo.SaveChangesAsync();
 
     return Results.Ok(command);
 });
